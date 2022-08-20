@@ -1,6 +1,6 @@
 <h1>RL for Navigation </h1>
 
-A Reinforcement learning project for developing an agent to simulate a robot with noise.
+A Reinforcement learning project for developing an agent to simulate a robot with applied noise.
 
 Undeerlying frameworks:
 Ignition-Gazebo
