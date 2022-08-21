@@ -152,9 +152,7 @@ class MovingrobotEnvPhysicsRandUpdated(
 
         if self.timesphy == 0:
             raise RuntimeError("0 ROLLOUTS")
-        # print(f"Rollout : {self.timesphy, self.gravity_z}")
 
-        # print(f"Physics expired  : {self.physics_expired()}")
 
 
        
