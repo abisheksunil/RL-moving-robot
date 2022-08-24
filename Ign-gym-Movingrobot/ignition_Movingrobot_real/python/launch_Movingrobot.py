@@ -14,6 +14,10 @@ from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.logger import configure
 
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.utils import set_random_seed
+
 import gym
 from gym_ignition.utils import logger
 from gym_ignition_environments1 import randomizers
@@ -39,43 +43,30 @@ def make_env_from_id(env_id: str, **kwargs) -> gym.Env:
     return gym.make(env_id, **kwargs)
 
 
-# Create a partial function passing the environment id
-make_env = functools.partial(make_env_from_id, env_id=env_id)
+def make_env(env_id, rank, seed=0):
+    """
+    Utility function for multiprocessed env.
 
+    :param env_id: (str) the environment ID
+    :param num_env: (int) the number of environments you wish to have in subprocesses
+    :param seed: (int) the inital seed for RNG
+    :param rank: (int) index of the subprocess
+    """
+    def _init():
+        # Create a partial function passing the environment id
+        m_env = functools.partial(make_env_from_id, env_id=env_id)
+    
+         # This is a complex example that randomizes both the physics and the model.
+        env = randomizers.Movingrobot_rand_updated.MovingrobotEnvPhysicsRandUpdated(
+            env=m_env, num_physics_rollouts=2, taskverbo= False)
 
+        # Check the environment
+        check_env(env)
 
-
-# Wrap the environment without the randomizer.
-
-# env = randomizers.Movingrobot_norand.MovingrobotEnvNoRandomizations(
-#     env=make_env, taskverbo= False)
-
-
-# Wrap the environment with the randomizer.
-# This is a complex example that randomizes both the physics and the model.
-
-env = randomizers.Movingrobot_rand_updated.MovingrobotEnvPhysicsRandUpdated(
-    env=make_env, num_physics_rollouts=2, taskverbo= False)
-
-# This is a complex example that randomizes both the physics and the model.
-# env = randomizers.cartpole.CartpoleEnvRandomizer(
-#     env=make_env, seed=42, num_physics_rollouts=5)
-
-# Enable the rendering
-# env.render('human')
-
-# Check the environment
-check_env(env)
-
-# Initialize the seed
-env.seed(42)
-
-
-# Logger 
-
-tmp_path = "/tmp/sb3_log/"
-# # set up logger
-# new_logger = configure(tmp_path, ["stdout", "csv", "tensorboard"])
+        env.seed(seed + rank)
+        return env
+    set_random_seed(seed)
+    return _init
 
 
 # Arg parser 
@@ -97,53 +88,64 @@ def rosLaunchSub():
     rospy.loginfo("started")
 
 
-# Start the training
-if args.rl == True:
-    # env.render()
-    # model = PPO("MlpPolicy", env, verbose=1,  tensorboard_log="./har_log")
-    # print("done setting the model")
-    # # Set new logger
-    # # model.set_logger(new_logger)
-    # model.learn(total_timesteps=5000)
-    # model.save("saves/n3/ppo_Movingrobotr1")
-    # model.learn(total_timesteps=5000, reset_num_timesteps=False, tb_log_name="PPO-d")
-    # model.save("saves/n3/ppo_Movingrobotr2")
-    # model.learn(total_timesteps=5000,  reset_num_timesteps=False, tb_log_name="PPO-d")
-    # model.save("saves/n2/ppo_Movingrobotr3")
-    # model.learn(total_timesteps=5000, reset_num_timesteps=False)
-    # model.save("saves/n2/ppo_Movingrobotr4")
-    # model.learn(total_timesteps=5000, reset_num_timesteps=False)
-    # model.save("saves/n2/ppo_Movingrobotr5")
-    # model.learn(total_timesteps=5000, reset_num_timesteps=False)
-    # model.save("saves/n2/ppo_Movingrobotr6")
+if __name__ == '__main__':
 
-    # del model # remove to demonstrate saving and loading
+    # Enable vecEnv 
+        
+    num_cpu = 4
+    env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
+
+
+    # Start the training
+    if args.rl == True:
+        # env.render()
+        # model = PPO("MlpPolicy", env, verbose=1,  tensorboard_log="./har_log")
+        # print("done setting the model")
+        # # Set new logger
+        # # model.set_logger(new_logger)
+        # model.learn(total_timesteps=5000)
+        # model.save("saves/n3/ppo_Movingrobotr1")
+        # model.learn(total_timesteps=5000, reset_num_timesteps=False, tb_log_name="PPO-d")
+        # model.save("saves/n3/ppo_Movingrobotr2")
+        # model.learn(total_timesteps=5000,  reset_num_timesteps=False, tb_log_name="PPO-d")
+        # model.save("saves/n2/ppo_Movingrobotr3")
+        # model.learn(total_timesteps=5000, reset_num_timesteps=False)
+        # model.save("saves/n2/ppo_Movingrobotr4")
+        # model.learn(total_timesteps=5000, reset_num_timesteps=False)
+        # model.save("saves/n2/ppo_Movingrobotr5")
+        # model.learn(total_timesteps=5000, reset_num_timesteps=False)
+        # model.save("saves/n2/ppo_Movingrobotr6")
+
+        # del model # remove to demonstrate saving and loading
+
+
+        
+        
+        model = PPO.load("saves/n3/ppo_Movingrobotr2")
+        dones = False
+        reward = 0
+        counter = 0
+        # rosLaunchSub()
+
+    # Start the trained model 
+        obs = env.reset()
+        for _ in range(500):
+            # action= env.action_space.sample()
+            action, _states = model.predict(obs)
+            obs, rewards, dones, info = env.step(action)
+            print(obs, dones, counter)
+            env.render()
+            reward += rewards
+            counter += 1
+            if dones:
+                env.reset()
+                print(f"reward : {reward}")
+                reward = 0
+                
+        
     
-    model = PPO.load("saves/n3/ppo_Movingrobotr2")
-    dones = False
-    reward = 0
-    counter = 0
-    # rosLaunchSub()
-
-# Start the trained model 
-    obs = env.reset()
-    for _ in range(500):
-        # action= env.action_space.sample()
-        action, _states = model.predict(obs)
-        obs, rewards, dones, info = env.step(action)
-        print(obs, dones, counter)
-        env.render()
-        reward += rewards
-        counter += 1
-        if dones:
-            env.reset()
-            print(f"reward : {reward}")
-            reward = 0
-            
-    
- 
-    print(f"rewards : {reward}")
+        print(f"rewards : {reward}")
 
 
-    env.close()
-    time.sleep(5)
+        env.close()
+        time.sleep(5)
