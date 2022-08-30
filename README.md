@@ -1,6 +1,6 @@
 
 
-# NOTE : This repo is in a buiding phase and is just for representation as of now
+# NOTE : This repo is in a buiding phase and not meant for reproducing the results
 
 # RL-moving-robot
 
@@ -89,7 +89,7 @@ catkin make
 
 ### Launch file setup 
 
-The main launch file [launch_Movingrobot.py](ignition_Movingrobot_real/python/launch_Movingrobot.py) can be used for training the model, continue training from a previously trained model and also testing the model. For each of the tasks please make sure to set the right model, path, number of timesteps and other variables. Please refer [stable-baselines3 docs](https://stable-baselines3.readthedocs.io/en/master/) and the [Confluence articles](https://schmiedeone.atlassian.net/wiki/spaces/ST/pages/2932244481/Thesis)  for more details.
+The main launch file [launch_Movingrobot.py](ignition_Movingrobot_real/python/launch_Movingrobot.py) can be used for training the model, continue training from a previously trained model and also testing the model. For each of the tasks please make sure to set the right model, path, number of timesteps and other variables. Please refer [stable-baselines3 docs](https://stable-baselines3.readthedocs.io/en/master/) for more details.
 
 The flags while running the file
 
